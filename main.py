@@ -1,15 +1,25 @@
+
+
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Query, Body
 from typing import List, Optional
 from models import TaskCreate, Product, ProductSearch
 import db
 from scraper import scrap_url
 from datetime import datetime
+import logging
+
+
+logging.basicConfig(
+    level=logging.INFO,  
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-
 @app.get("/")
 def root():
+    logger.info("Root endpoint hit")
     return {"message": "Welcome to the Walmart Scraping API"}
 
 
@@ -20,8 +30,10 @@ def create_task(task: TaskCreate):
         task_data["created_at"] = datetime.utcnow()
         task_data["status"] = "pending"
         task_id = db.create_task(task_data)
+        logger.info(f"Task created successfully with ID: {task_id}")
         return task_id
     except Exception as e:
+        logger.error(f"Failed to create task: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to create task: {str(e)}")
 
 
@@ -29,13 +41,16 @@ def create_task(task: TaskCreate):
 def scrape_product_data(task_id: str, background_tasks: BackgroundTasks):
     task = db.get_task_by_id(task_id)
     if not task:
+        logger.warning(f"Task with ID {task_id} not found")
         raise HTTPException(status_code=404, detail="Task not found")
     if task["status"] != "pending":
+        logger.warning(f"Task {task_id} is not in pending state")
         raise HTTPException(status_code=400, detail="Task is not in pending state")
 
-    # Run scraper in background
+    
     def scrape_and_save(task):
         try:
+            logger.info(f"Started scraping for task ID: {task['_id']}")
             product = scrap_url(task["url"])
             product["client"] = task["client"]
             db.save_product(product)
@@ -44,7 +59,9 @@ def scrape_product_data(task_id: str, background_tasks: BackgroundTasks):
                 "finished_at": datetime.utcnow(),
                 "product_name": product.get("name"),
             })
+            logger.info(f"Successfully scraped and saved product for task ID: {task['_id']}")
         except Exception as e:
+            logger.error(f"Error scraping task ID {task['_id']}: {e}")
             db.update_task(task_id, {
                 "status": "error",
                 "error_message": str(e),
@@ -52,6 +69,7 @@ def scrape_product_data(task_id: str, background_tasks: BackgroundTasks):
             })
 
     background_tasks.add_task(scrape_and_save, task)
+    logger.info(f"Scraping task {task_id} added to background")
     return {"message": "Scraping started in the background"}
 
 
@@ -60,12 +78,15 @@ def get_tasks_by_client(client: str = Query(..., description="Client identifier"
     try:
         tasks = db.get_tasks_by_client(client)
         if not tasks:
+            logger.warning(f"No tasks found for client: {client}")
             raise HTTPException(status_code=404, detail="No tasks found for this client")
         for task in tasks:
             task["id"] = str(task["_id"])
             task.pop("_id", None)
+        logger.info(f"Retrieved {len(tasks)} tasks for client: {client}")
         return tasks
     except Exception as e:
+        logger.error(f"Error retrieving tasks for client {client}: {e}")
         raise HTTPException(status_code=500, detail=f"Error retrieving tasks: {str(e)}")
 
 
@@ -74,11 +95,14 @@ def get_task(task_id: str):
     try:
         task = db.get_task_by_id(task_id)
         if not task:
+            logger.warning(f"Task not found with ID: {task_id}")
             raise HTTPException(status_code=404, detail="Task not found")
         task["id"] = str(task["_id"])
         task.pop("_id", None)
+        logger.info(f"Retrieved task with ID: {task_id}")
         return task
     except Exception as e:
+        logger.error(f"Error retrieving task {task_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error retrieving task: {str(e)}")
 
 
@@ -89,8 +113,10 @@ def get_all_products():
         for product in products:
             product["id"] = str(product["_id"])
             product.pop("_id", None)
+        logger.info(f"Retrieved {len(products)} products")
         return products
     except Exception as e:
+        logger.error(f"Error retrieving products: {e}")
         raise HTTPException(status_code=500, detail=f"Error retrieving products: {str(e)}")
 
 
@@ -104,12 +130,15 @@ def search_products(
         search_params = ProductSearch(name=name, id=id, price=price)
         products = db.get_product(**search_params.dict(exclude_none=True))
         if not products:
+            logger.warning("No products found for given search criteria")
             raise HTTPException(status_code=404, detail="No products found")
         for product in products:
             product["id"] = str(product["_id"])
             product.pop("_id", None)
+        logger.info(f"Found {len(products)} product(s) matching search criteria")
         return products
     except Exception as e:
+        logger.error(f"Error searching products: {e}")
         raise HTTPException(status_code=500, detail=f"Error searching products: {str(e)}")
 
 
@@ -122,10 +151,14 @@ def update_task(
     try:
         task = db.get_task_by_id(task_id)
         if not task:
+            logger.warning(f"Task not found with ID: {task_id}")
             raise HTTPException(status_code=404, detail="Task not found")
         if task["client"] != client:
+            logger.warning(f"Client '{client}' tried to modify task not owned by them: {task_id}")
             raise HTTPException(status_code=403, detail="Permission denied; not your task")
         db.update_task(task_id, updates)
+        logger.info(f"Task {task_id} updated by client: {client}")
         return {"updated": True}
     except Exception as e:
+        logger.error(f"Error updating task {task_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error updating task: {str(e)}")
