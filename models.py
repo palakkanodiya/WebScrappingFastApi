@@ -19,7 +19,7 @@ class Product(BaseModel):
     name: str
     price: Optional[str]
     images: List[str]
-    about_this_item: Optional[str]
+    # about_this_item: Optional[str]
     colors: List[str]
     sizes: List[str]
     url: str

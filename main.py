@@ -7,7 +7,7 @@ from datetime import datetime
 
 app = FastAPI()
 
-# Root endpoint
+# # Root endpoint
 @app.get("/")
 def root():
     return {"message": "Welcome to the Walmart Scraping API"}

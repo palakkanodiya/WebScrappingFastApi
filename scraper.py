@@ -191,29 +191,29 @@ def scrape_walmart(url, headless=False):
             product["images"] = []
 
         # About this item
-        try:
-            scroll_to_element_by_id("product-description-section")
-            desc_container = WebDriverWait(driver, 12).until(
-                EC.presence_of_element_located((By.XPATH, '//*[@id="product-description-section"]'))
-            )
-            details = []
-            for ul in desc_container.find_elements(By.XPATH, ".//ul | .//ol"):
-                for li in ul.find_elements(By.TAG_NAME, 'li'):
-                    line = li.text.strip()
-                    if line:
-                        details.append(line)
-            for p in desc_container.find_elements(By.TAG_NAME, 'p'):
-                line = p.text.strip()
-                if line and line not in details:
-                    details.append(line)
-            if not details:
-                all_lines = [line.strip() for line in desc_container.text.split('\n') if line.strip()]
-                headings = ["about this item", "product details"]
-                details = [l for l in all_lines if l.lower() not in headings]
-            about_text = "\n".join(details).strip()
-            product["about_this_item"] = about_text if about_text else "N/A"
-        except Exception:
-            product["about_this_item"] = "N/A"
+        # try:
+        #     scroll_to_element_by_id("product-description-section")
+        #     desc_container = WebDriverWait(driver, 12).until(
+        #         EC.presence_of_element_located((By.XPATH, '//*[@id="product-description-section"]'))
+        #     )
+        #     details = []
+        #     for ul in desc_container.find_elements(By.XPATH, ".//ul | .//ol"):
+        #         for li in ul.find_elements(By.TAG_NAME, 'li'):
+        #             line = li.text.strip()
+        #             if line:
+        #                 details.append(line)
+        #     for p in desc_container.find_elements(By.TAG_NAME, 'p'):
+        #         line = p.text.strip()
+        #         if line and line not in details:
+        #             details.append(line)
+        #     if not details:
+        #         all_lines = [line.strip() for line in desc_container.text.split('\n') if line.strip()]
+        #         headings = ["about this item", "product details"]
+        #         details = [l for l in all_lines if l.lower() not in headings]
+        #     about_text = "\n".join(details).strip()
+        #     product["about_this_item"] = about_text if about_text else "N/A"
+        # except Exception:
+        #     product["about_this_item"] = "N/A"
 
         # Related links
         try:

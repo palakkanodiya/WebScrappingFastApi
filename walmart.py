@@ -161,7 +161,7 @@ product = {
     "title": safe_find_text_by_css(['h1.prod-ProductTitle', 'h1[itemprop="name"]'], timeout=15),
     "price": safe_find_text_by_css(['span.price-characteristic', 'span[itemprop="price"]', 'span.price-group'], timeout=10),
     "images": [],
-    "about_this_item": "N/A",
+    # "about_this_item": "N/A",
     "colors": ["N/A"],
     "sizes": ["N/A"],
     "product_url": product_url,
