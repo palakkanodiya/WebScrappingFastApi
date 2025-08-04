@@ -1,4 +1,4 @@
-# WebScrappingFastApi
+# High-Performance Web Scraping API Using FastAPI
 
 ##  Description
 
@@ -8,12 +8,12 @@ A simple FastAPI project that scrapes product information from a Walmart product
 
 ## Tech Stack
 
-- FastAPI
-- Pydantic
-- Requests
-- BeautifulSoup / Selenium
-- PyMongo
-- MongoDB
+- FastAPI – High-performance web framework for APIs
+- Pydantic – Data validation and serialization
+- Requests – For sending HTTP requests
+- BeautifulSoup / Selenium – HTML parsing and dynamic content scraping
+- PyMongo – MongoDB driver for Python
+- MongoDB NoSQL database (local or cloud with MongoDB Atlas)
 
 ---
 
@@ -36,8 +36,6 @@ git clone https://github.com/yourusername/WebScrappingFastApi.git
 cd WebScrappingFastApi
 
 
-
-
 ```
 
 ### 2. Set Up Virtual Environment
@@ -49,3 +47,16 @@ python -m venv venv
 venv\Scripts\activate
 
 ```
+
+### For macOS/Ubuntu/Linux:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+
+```
+
+### Start the FastAPI Server
+
+uvicorn main:app --reload
+

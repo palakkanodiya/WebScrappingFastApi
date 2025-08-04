@@ -5,7 +5,7 @@ from datetime import datetime
 class TaskCreate(BaseModel):
     url: str
     client: str
-
+ 
 class Product(BaseModel):
     id: Optional[str]
     name: str
