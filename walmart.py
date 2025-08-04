@@ -1,7 +1,3 @@
-
-
-
-
 import time
 import pandas as pd
 from pymongo import MongoClient
@@ -10,7 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# ---- MongoDB Setup ----
+
 client = MongoClient("mongodb://localhost:27017/")
 db = client["walmart_scraped"]
 collection = db["consoles"]
@@ -168,13 +164,12 @@ product = {
     "related_links": [],
 }
 
-# ---- Extract Colors ----
 product["colors"] = extract_colors(driver)
 
-# ---- Extract Sizes ----
+
 product["sizes"] = extract_sizes(driver)
 
-# ---- Extract Images (max 5 gallery images) ----
+
 try:
     gallery_elem = scroll_to_element('div[data-testid="media-gallery"]')
     image_urls = []
@@ -217,11 +212,10 @@ try:
             if len(image_urls) >=5:
                 break
     product["images"] = image_urls
-    print(f"🖼️ Product gallery images: {len(product['images'])} extracted (max 5).")
+    print(f"Product gallery images: {len(product['images'])} extracted (max 5).")
 except Exception as e:
-    print(f"❌ Error extracting images: {e}")
+    print(f"Error extracting images: {e}")
 
-# ---- Extract About This Item Section ----
 try:
     scroll_to_element_by_id("product-description-section")
     desc_container = WebDriverWait(driver, 12).until(
@@ -250,10 +244,10 @@ try:
 
     about_text = "\n".join(details).strip()
     product["about_this_item"] = about_text if about_text else "N/A"
-    print("📝 About This Item content extracted.")
+    print("About This Item content extracted.")
 except Exception as e:
     product["about_this_item"] = "N/A"
-    print(f"⚠️ Failed to extract About This Item: {e}")
+    print(f"Failed to extract About This Item: {e}")
 
 # ---- Related Links ----
 try:
@@ -265,10 +259,10 @@ try:
             unique_links.add(href.split("?")[0])
     product["related_links"] = list(unique_links)
 except Exception as e:
-    print("⚠️ Related links not found:", e)
+    print("Related links not found:", e)
 
 # ---- Print all scraped data ----
-print("\n✅ Product Details:")
+print("\nProduct Details:")
 for k, v in product.items():
     if isinstance(v, list):
         print(f"{k.capitalize()}: {len(v)} items -> {v}")
@@ -278,18 +272,18 @@ for k, v in product.items():
 # ---- Save to MongoDB ----
 try:
     collection.insert_one(product)
-    print("🍃 Saved to MongoDB")
+    print("Saved to MongoDB")
 except Exception as e:
-    print("❌ Error saving to MongoDB:", e)
+    print("Error saving to MongoDB:", e)
 
 # ---- Save to CSV ----
 csv_file = "walmart_data.csv"
 try:
     df = pd.DataFrame([product])
     df.to_csv(csv_file, index=False)
-    print(f"📁 Saved to CSV: {csv_file}")
+    print(f"Saved to CSV: {csv_file}")
 except Exception as e:
-    print("❌ Error saving to CSV:", e)
+    print("Error saving to CSV:", e)
 
 # ---- Quit Browser ----
 driver.quit()

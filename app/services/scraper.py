@@ -6,6 +6,16 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 def scrape_walmart(url, headless=False):
+    """
+    Scrapes product data from a Walmart product page.
+
+    Args:
+        url (str): The URL of the Walmart product page.
+        headless (bool): Whether to run the browser in headless mode.
+
+    Returns:
+        dict: Scraped product information including name, price, images, colors, sizes, description, and related links.
+    """
     options = uc.ChromeOptions()
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-gpu")
@@ -23,7 +33,6 @@ def scrape_walmart(url, headless=False):
         driver.get(url)
         time.sleep(5)
 
-        # Debug: Page preview
         print(" PAGE SOURCE PREVIEW ")
         print(driver.page_source[:1500])
         print("----")
@@ -33,6 +42,9 @@ def scrape_walmart(url, headless=False):
             input("Press ENTER after solving CAPTCHA and page loads correctly...")
 
         def safe_find_text_by_css(selectors, timeout=5):
+            """
+            Tries a list of CSS selectors and returns the first found non-empty text.
+            """
             if isinstance(selectors, str):
                 selectors = [selectors]
             for selector in selectors:
@@ -48,6 +60,9 @@ def scrape_walmart(url, headless=False):
             return "N/A"
 
         def extract_colors():
+            """
+            Extracts available color options from the product page.
+            """
             color_names = []
             try:
                 selectors = [
@@ -69,6 +84,9 @@ def scrape_walmart(url, headless=False):
                 return ["N/A"]
 
         def extract_sizes():
+            """
+            Extracts available size options from the product page.
+            """
             size_names = []
             try:
                 selectors = [
@@ -90,6 +108,9 @@ def scrape_walmart(url, headless=False):
                 return ["N/A"]
 
         def extract_images():
+            """
+            Extracts up to 5 product image URLs from thumbnail gallery or fallback.
+            """
             image_urls = []
             try:
                 thumbs = driver.find_elements(By.CSS_SELECTOR, 'img[data-testid="media-gallery-thumbnail-image"]')
@@ -118,6 +139,9 @@ def scrape_walmart(url, headless=False):
             return image_urls
 
         def extract_about_this_item():
+            """
+            Extracts the 'About This Item' product description section.
+            """
             try:
                 desc_elem = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, '#product-description-section'))
@@ -129,6 +153,9 @@ def scrape_walmart(url, headless=False):
                 return "N/A"
 
         def extract_related_links():
+            """
+            Finds related product links on the same page.
+            """
             try:
                 links = driver.find_elements(By.CSS_SELECTOR, 'a[href*="/ip/"]')
                 unique_links = list({a.get_attribute("href").split("?")[0] for a in links if a.get_attribute("href")})
@@ -136,6 +163,7 @@ def scrape_walmart(url, headless=False):
             except Exception:
                 return []
 
+        # Extracting main product data
         product = {
             "url": url,
             "name": safe_find_text_by_css([
@@ -170,6 +198,15 @@ def scrape_walmart(url, headless=False):
 
 
 def scrape_kroger(url):
+    """
+    Placeholder scraper for Kroger product pages.
+
+    Args:
+        url (str): The URL to scrape.
+
+    Returns:
+        dict: Mock product information.
+    """
     return {
         "name": "Kroger Product",
         "price": "2.99",
@@ -183,6 +220,18 @@ def scrape_kroger(url):
 
 
 def scrap_url(url):
+    """
+    Determines which scraper to use based on the domain in the URL.
+
+    Args:
+        url (str): Product page URL.
+
+    Returns:
+        dict: Scraped product data.
+
+    Raises:
+        Exception: If the domain is unsupported.
+    """
     if "walmart.com" in url:
         return scrape_walmart(url)
     elif "kroger.com" in url:

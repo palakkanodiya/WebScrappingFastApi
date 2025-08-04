@@ -19,12 +19,27 @@ app = FastAPI(title="Walmart Web Scraping API", version="1.0")
 
 @app.get("/", summary="Root Endpoint", tags=["Root"])
 def root():
+    """
+    Root endpoint for health check or welcome message.
+
+    Returns:
+        A welcome message indicating that the API is operational.
+    """
     logger.info("Root endpoint hit")
     return {"message": "Welcome to the Walmart Scraping API"}
 
 
 @app.post("/tasks", response_model=str, summary="Create a New Task", tags=["Tasks"])
 def create_task(task: TaskCreate):
+    """
+    Create a new scraping task.
+
+    Args:
+        task (TaskCreate): Task details including URL and client ID.
+
+    Returns:
+        str: The ID of the newly created task.
+    """
     try:
         task_data = task.dict()
         task_data["created_at"] = datetime.utcnow()
@@ -39,7 +54,16 @@ def create_task(task: TaskCreate):
 
 @app.post("/tasks/{task_id}/scrape", summary="Scrape Product Data", tags=["Tasks"])
 def scrape_product_data(task_id: str, background_tasks: BackgroundTasks):
-    
+    """
+    Trigger background scraping for a specific task ID.
+
+    Args:
+        task_id (str): The ID of the task to scrape.
+        background_tasks (BackgroundTasks): FastAPI background task handler.
+
+    Returns:
+        dict: A message confirming background scraping has started.
+    """
     task = task_db.get_task_by_id(task_id)
     if not task:
         logger.warning(f"Task with ID {task_id} not found")
@@ -75,6 +99,15 @@ def scrape_product_data(task_id: str, background_tasks: BackgroundTasks):
 
 @app.get("/tasks", summary="Get Tasks by Client", tags=["Tasks"])
 def get_tasks_by_client(client: str = Query(..., description="Client identifier")):
+    """
+    Retrieve all tasks created by a specific client.
+
+    Args:
+        client (str): Client identifier.
+
+    Returns:
+        List[dict]: A list of tasks created by the client.
+    """
     try:
         tasks = task_db.get_tasks_by_client(client)
         if not tasks:
@@ -91,6 +124,15 @@ def get_tasks_by_client(client: str = Query(..., description="Client identifier"
 
 @app.get("/tasks/{task_id}", summary="Get Task by ID", tags=["Tasks"])
 def get_task(task_id: str):
+    """
+    Retrieve a task by its ID.
+
+    Args:
+        task_id (str): The unique ID of the task.
+
+    Returns:
+        dict: Task data.
+    """
     try:
         task = task_db.get_task_by_id(task_id)
         if not task:
@@ -106,6 +148,12 @@ def get_task(task_id: str):
 
 @app.get("/products", response_model=List[Product], summary="Get All Products", tags=["Products"])
 def get_all_products():
+    """
+    Retrieve all scraped product records.
+
+    Returns:
+        List[Product]: List of all products.
+    """
     try:
         products = product_db.get_all_products()
         for product in products:
@@ -123,6 +171,17 @@ def search_products(
     id: Optional[str] = None,
     price: Optional[str] = None
 ):
+    """
+    Search products based on name, ID, or price.
+
+    Args:
+        name (Optional[str]): Product name.
+        id (Optional[str]): Product ID.
+        price (Optional[str]): Product price.
+
+    Returns:
+        List[Product]: List of matching products.
+    """
     try:
         search_params = ProductSearch(name=name, id=id, price=price)
         products = product_db.get_product(**search_params.dict(exclude_none=True))
@@ -135,7 +194,7 @@ def search_products(
         return products
 
     except HTTPException as e:
-        raise e  # Allow FastAPI to handle 404 or any other manual error
+        raise e  # Let FastAPI handle it
 
     except Exception as e:
         logger.exception("Unexpected error searching products")
@@ -148,6 +207,17 @@ def update_task(
     client: str = Query(..., description="Client identifier"),
     updates: dict = Body(..., description="Fields to update")
 ):
+    """
+    Update specific fields of a task, but only if the client is the owner.
+
+    Args:
+        task_id (str): Task ID to update.
+        client (str): Client attempting the update.
+        updates (dict): Dictionary of updates to apply.
+
+    Returns:
+        dict: Result of the update operation.
+    """
     try:
         task = task_db.get_task_by_id(task_id)
         if not task:
@@ -162,6 +232,3 @@ def update_task(
     except Exception as e:
         logger.exception(f"Error updating task {task_id}")
         raise HTTPException(status_code=500, detail=f"Error updating task: {str(e)}")
-
-
-
